@@ -44,17 +44,13 @@ class YD:
             raise Exception(f"Ошибка: {error_msg}")
 
 
-    def upload_geo(self):
+    def upload_geo(self, geo_data, disk_path):
         try:
-            # Получаем ссылку для загрузки
-            upload_link = self.get_upload_link()
-
             # Преобразуем данные в JSON строку и загружаем
             json_data = json.dumps(geo_data, ensure_ascii=False, indent=2).encode('utf-8')
 
             # Загружаем файл
-            upload_link = self.get_upload_link()
-            upload = requests.put(upload_link, data=json_data)
+            upload = requests.put(disk_path, data=json_data)
 
             if upload.status_code == 201:
                 print(f"✅ Файл {self.file_name} загружен успешно")
@@ -70,24 +66,17 @@ class YD:
 
 
 class IP:
-    def __init__(self):
-        pass
     @staticmethod
-    def get_ip():
+    def get_ip()-> str:
         your_ip = requests.get('https://api.ipify.org/?format=json')
         ip = your_ip.json()['ip']
         return ip
 
 
 
-
 class Geo:
-    def __init__(self):
-        pass
-
-    def get_geo(self, ip = None):
-        if ip is None:
-            ip = IP.get_ip()
+    @staticmethod
+    def get_geo(ip) -> dict:
         geo_file = requests.get(f'https://ipinfo.io/{ip}/geo')
         if geo_file.status_code == 200:
             return geo_file.json()
@@ -116,13 +105,11 @@ def main():
     with tqdm(total=len(steps), desc="Выполнение задачи", unit="шаг") as pbar:
         pbar.set_description("Получение IP-адреса")
         ip = IP.get_ip()
-        geo_data = Geo.get_geo(ip)
         pbar.update(1)
         sleep(0.1)
 
         pbar.set_description("🌍 Получение геоданных")
-        geo = Geo()
-        geo_data = geo.get_geo(ip)
+        geo_data = Geo.get_geo(ip)
         pbar.update(1)
         sleep(0.1)
 
@@ -137,6 +124,7 @@ def main():
         sleep(0.1)
 
         pbar.set_description("⬆️ Загрузка данных на Яндекс.Диск")
+        yd.upload_geo(geo_data, upload_link)
         pbar.update(1)
 
         print(f"✅ Данные загружены на Яндекс.Диск: {YD.file_name}")
